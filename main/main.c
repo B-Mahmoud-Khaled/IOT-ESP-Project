@@ -79,15 +79,43 @@ static void wifi_init(void)
     }
 }
 
-// int speed = 5000;
+static void esp_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+    ESP_LOGI(TAG, "Sending data...");
+    if (status == 0)
+    {
+        ESP_LOGI(TAG, "Sent Successfully!");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Failure to send.");
+    }
+}
 
-// static uint8_t peer_mac_addr[6] = {0x2d, 0x80, 0x0e, 0x80, 0x30, 0x4d}
+typedef struct
+{
+    uint8_t mac_addr;
+    int speed;
+} sentData;
 
-// static void esp_now_init(void) {
-//     esp_now_init();
-//     esp_now_add_peer();
+sentData sent_param;
 
-// }
+int speed = 5000;
+
+static void esp_recv_cb(const uint8_t mac_addr, uint8_t *data, int len)
+{
+}
+
+static uint8_t peer_mac_addr[ESP_NOW_ETH_ALEN] = {0x2d, 0x80, 0x0e, 0x80, 0x30, 0x4d}
+
+static void
+esp_now_init(void)
+{
+    ESP_ERROR_CHECK(esp_now_init());
+    ESP_ERROR_CHECK(esp_now_add_peer());
+    ESP_ERROR_CHECK(esp_now_register_send_cb(esp_send_cb));
+    ESP_ERROR_CHECK(esp_now_register_recv_cb(esp_recv_cb));
+}
 
 void app_main(void)
 {
