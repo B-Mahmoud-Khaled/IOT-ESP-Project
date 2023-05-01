@@ -92,29 +92,35 @@ static void esp_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
     }
 }
 
-typedef struct
-{
-    uint8_t mac_addr;
-    int speed;
-} sentData;
-
-sentData sent_param;
+int incomingSpeed;
 
 int speed = 5000;
 
 static void esp_recv_cb(const uint8_t mac_addr, uint8_t *data, int len)
 {
+    memcpy(&incomingSpeed, data, sizeof(incomingSpeed));
+    ESP_LOGI(TAG, "Length of data received %d", len);
+    if (incomingSpeed < speed)
+    {
+        speed = incomingSpeed;
+    }
 }
+;
+// static uint8_t peer_mac_addr[ESP_NOW_ETH_ALEN] = {0xc8, 0xf0, 0x9e, 0xac, 0x9e, 0x3c}; //1
+static uint8_t peer_mac_addr[ESP_NOW_ETH_ALEN] = {0x08, 0xb6, 0x1f, 0x37, 0xfc, 0x44}; //2
 
-static uint8_t peer_mac_addr[ESP_NOW_ETH_ALEN] = {0x2d, 0x80, 0x0e, 0x80, 0x30, 0x4d}
+esp_now_peer_info_t peerInfo;
 
-static void
-esp_now_init(void)
+static void now_init(void)
 {
+    memcpy(peerInfo.peer_addr, peer_mac_addr, ESP_NOW_ETH_ALEN);
+    peerInfo.channel = 0;
+    peerInfo.encrypt = false;
     ESP_ERROR_CHECK(esp_now_init());
-    ESP_ERROR_CHECK(esp_now_add_peer());
+    ESP_ERROR_CHECK(esp_now_add_peer(peerInfo));
     ESP_ERROR_CHECK(esp_now_register_send_cb(esp_send_cb));
     ESP_ERROR_CHECK(esp_now_register_recv_cb(esp_recv_cb));
+    ESP_ERROR_CHECK(esp_now_send(peer_mac_addr, (uint8_t *) &speed, sizeof(speed)));
 }
 
 void app_main(void)
@@ -129,4 +135,5 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
 
     wifi_init();
+    now_init();
 }
